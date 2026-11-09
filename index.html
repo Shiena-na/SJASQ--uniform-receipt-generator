@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>St. Joseph Academy of Sariaya, Quezon</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=UnifrakturCook:wght@700&family=Zilla+Slab:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+</head>
+<body>
+
+<header class="topbar no-print">
+  <div class="brand">
+    <img src="logo.png" alt="" class="brand-logo">
+    <h1 id="brandName">St. Joseph Academy of Sariaya, Quezon</h1>
+  </div>
+  <nav class="nav">
+    <button class="btn btn-gold btn-sm" id="newBtn" type="button">+ New Receipt</button>
+    <button class="btn btn-ghost-light btn-sm" id="historyBtn" type="button">Saved Receipts</button>
+    <button class="btn btn-ghost-light btn-sm" id="adminBtn" type="button">🔒 Admin</button>
+  </nav>
+</header>
+
+<div id="storageWarn" class="banner no-print" hidden>
+  Saving is not available in this browser (private mode or blocked storage). You can still print and download receipts, but they will not be recorded.
+</div>
+
+<main class="app">
+
+  <!-- ============ LEFT: FORM ============ -->
+  <div class="col-form no-print">
+
+    <section class="card" id="settingsCard" hidden>
+      <h2>Shop Settings <span class="tag">Admin</span></h2>
+      <div class="grid two">
+        <div class="field"><label for="setName">Shop name</label><input type="text" id="setName" maxlength="80"></div>
+        <div class="field"><label for="setTagline">Tagline (optional)</label><input type="text" id="setTagline" maxlength="80"></div>
+        <div class="field"><label for="setAddress">Address (optional)</label><input type="text" id="setAddress" maxlength="120"></div>
+        <div class="field"><label for="setContact">Contact no. (optional)</label><input type="text" id="setContact" maxlength="60"></div>
+      </div>
+      <div class="field narrow">
+        <label for="setPin">Change admin PIN (optional)</label>
+        <input type="password" id="setPin" inputmode="numeric" maxlength="12" placeholder="New PIN, at least 4 digits" autocomplete="new-password">
+      </div>
+      <p class="hint">The PIN only protects price changes and these settings on this device. It is a convenience lock, not strong security.</p>
+      <button class="btn btn-primary" id="saveSettingsBtn" type="button">Save settings</button>
+    </section>
+
+    <section class="card">
+      <h2>Transaction</h2>
+      <div class="grid two">
+        <div class="field"><label for="receiptNo">Receipt no.</label><input type="text" id="receiptNo" readonly></div>
+        <div class="field"><label for="txDate">Date &amp; time (live)</label><input type="text" id="txDate" readonly></div>
+      </div>
+      <div class="field"><label for="customer">Customer / school name <span class="opt">(optional)</span></label>
+        <input type="text" id="customer" maxlength="80" placeholder="e.g. St. Joseph Academy of Sariaya" autocomplete="off"></div>
+      <div class="grid two">
+        <div class="field"><label for="claimDate">Claim date <span class="opt">(optional)</span></label><input type="date" id="claimDate"></div>
+        <div class="field"><label for="notes">Notes <span class="opt">(optional)</span></label><input type="text" id="notes" maxlength="140" autocomplete="off"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Uniform Order</h2>
+      <div class="orow ohead" aria-hidden="true">
+        <span>Uniform item</span><span>Size</span><span>Qty</span><span>Unit price</span><span class="r">Subtotal</span><span></span>
+      </div>
+      <div id="rows"></div>
+      <div class="order-foot">
+        <button class="btn btn-outline" id="addRowBtn" type="button">+ Add item</button>
+        <div class="order-total"><span>Total quantity</span> <b id="totQty">0</b></div>
+      </div>
+      <p class="hint" id="priceHint">Prices fill in automatically. To change a price, unlock Admin mode (top right).</p>
+    </section>
+
+    <section class="card">
+      <h2>Payment</h2>
+      <div class="pay">
+        <div class="pay-line"><span>Subtotal</span><b id="fSubtotal">₱0.00</b></div>
+        <div class="pay-line">
+          <label for="discount">Discount <span class="opt">(₱, optional)</span></label>
+          <input type="number" id="discount" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+        </div>
+        <div class="pay-line strong"><span>Total amount</span><b id="fTotal">₱0.00</b></div>
+        <div class="pay-line">
+          <label for="paid">Amount paid</label>
+          <input type="number" id="paid" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+        </div>
+        <div class="pay-line strong" id="fChangeLine" hidden><span>Change</span><b id="fChange">₱0.00</b></div>
+      </div>
+    </section>
+
+    <div id="formErrors" class="errors" role="alert" hidden></div>
+
+    <div class="actions">
+      <button class="btn btn-primary btn-lg" id="generateBtn" type="button">Generate Receipt</button>
+      <div class="actions-row">
+        <button class="btn btn-outline" id="printBtn" type="button">🖨 Print</button>
+        <button class="btn btn-outline" id="pdfBtn" type="button">⬇ Download PDF</button>
+        <button class="btn btn-outline" id="saveBtn" type="button">💾 Save</button>
+        <button class="btn btn-quiet" id="clearBtn" type="button">Clear Form</button>
+      </div>
+      <p class="savestate" id="saveState">Not saved yet</p>
+    </div>
+
+  </div>
+
+  <!-- ============ RIGHT: RECEIPT ============ -->
+  <aside class="col-receipt">
+    <div class="receipt-label no-print">Receipt preview</div>
+    <article class="receipt" id="receipt">
+      <header class="r-head">
+        <img src="logo.png" alt="Logo" class="r-logo">
+        <div class="r-shop">
+          <h2 id="rShopName"></h2>
+          <p id="rTagline" class="r-tagline"></p>
+          <p id="rContact" class="r-contact"></p>
+        </div>
+      </header>
+
+      <div class="r-title"><span>PE Uniform Receipt</span></div>
+
+      <dl class="r-meta">
+        <div><dt>Receipt no.</dt><dd id="rNo">—</dd></div>
+        <div><dt>Date &amp; time</dt><dd id="rDate">—</dd></div>
+        <div class="wide" id="rCustomerWrap"><dt>Customer / School</dt><dd id="rCustomer"></dd></div>
+        <div id="rClaimWrap"><dt>Claim date</dt><dd id="rClaim"></dd></div>
+      </dl>
+
+      <div class="r-tablewrap">
+        <table class="r-items">
+          <thead><tr><th>Uniform item</th><th>Size</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Subtotal</th></tr></thead>
+          <tbody id="rItems"></tbody>
+          <tfoot><tr><td colspan="2">Total quantity</td><td class="num" id="rQty">0</td><td colspan="2"></td></tr></tfoot>
+        </table>
+      </div>
+
+      <div class="r-summary">
+        <div class="line"><span>Subtotal</span><span id="rSub">₱0.00</span></div>
+        <div class="line" id="rDiscLine"><span>Discount</span><span id="rDisc">₱0.00</span></div>
+        <div class="line total"><span>Total amount</span><span id="rTotal">₱0.00</span></div>
+        <div class="line"><span>Amount paid</span><span id="rPaid">₱0.00</span></div>
+        <div class="line" id="rChangeLine"><span>Change</span><span id="rChange">₱0.00</span></div>
+      </div>
+
+      <p class="r-notes" id="rNotes"></p>
+
+      <div class="r-sign">
+        <div><div class="sigline"></div><span>Received by / Authorized signature</span></div>
+        <div><div class="sigline"></div><span>Customer signature</span></div>
+      </div>
+      <p class="r-thanks">Thank you for your order.</p>
+    </article>
+  </aside>
+</main>
+
+<!-- ============ SAVED RECEIPTS ============ -->
+<section class="card history no-print" id="historyCard" hidden>
+  <h2>Saved Receipts</h2>
+  <p class="hint">Receipts are stored in this browser on this device only. They are not synced to other devices. Use Export backup regularly.</p>
+  <div class="history-tools">
+    <input type="search" id="historySearch" placeholder="Search by receipt no. or customer / school" aria-label="Search saved receipts">
+    <button class="btn btn-outline btn-sm" id="exportBtn" type="button">Export backup</button>
+    <button class="btn btn-outline btn-sm" id="importBtn" type="button">Import backup</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+  <div id="historyList"></div>
+</section>
+
+<dialog id="pinDialog">
+  <form method="dialog" id="pinForm">
+    <h3>Admin PIN</h3>
+    <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" aria-label="Admin PIN">
+    <p class="pin-err" id="pinErr" hidden>Incorrect PIN.</p>
+    <div class="dlg-actions">
+      <button class="btn btn-quiet" type="button" id="pinCancel">Cancel</button>
+      <button class="btn btn-primary" type="submit">Unlock</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
