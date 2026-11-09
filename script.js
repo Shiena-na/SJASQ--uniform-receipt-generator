@@ -427,7 +427,10 @@ $("clearBtn").addEventListener("click", () => {
 });
 $("newBtn").addEventListener("click", () => {
   if(dirty && S.rows.some(r => r.qty !== "") && !confirm("Start a new receipt? Unsaved changes will be lost.")) return;
-  newReceipt(); window.scrollTo({top:0, behavior:"smooth"}); toast("New receipt: " + S.receiptNo);
+  newReceipt();
+  window.scrollTo({top:0, behavior:"smooth"});
+  document.querySelector(".col-form").scrollTo({top:0});   // form panel scrolls back to the top
+  toast("New receipt: " + S.receiptNo);
 });
 // Date and time follow the clock until the receipt is saved.
 setInterval(() => {
